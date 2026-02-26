@@ -2,6 +2,7 @@ import pandas as pd
 import random
 import numpy as np
 import os
+from datetime import datetime
 
 # --- 1. 遊戲基本設定 ---
 BASE_BET = 100
@@ -347,6 +348,8 @@ def main():
 
     if rtp_summary:
         print("\n=== RTP 總覽 ===")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"模擬完成時間：{timestamp}")
         print("對照表\t\t策略 A RTP\t策略 B RTP")
         for label, rtp_a, rtp_b in rtp_summary:
             print(f"{label}\t{rtp_a:.2f}%\t\t{rtp_b:.2f}%")
