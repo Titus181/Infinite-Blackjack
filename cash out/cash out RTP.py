@@ -7,6 +7,9 @@ import os
 BASE_BET = 100
 SIMULATION_ROUNDS = 100000000  # 模擬局數，可依需求調高以增加精準度
 
+# 是否一併計算「平滑推算表.backup.csv」的 RTP（True=兩張表各算策略 A/B；False=僅算平滑推算表.csv）
+CALCULATE_BACKUP_RTP = False
+
 # 以腳本所在目錄為基準，確保無論從哪裡執行都能找到 data
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(SCRIPT_DIR, "data", "blackjack 對照表 - 平滑推算表.csv")
@@ -333,13 +336,14 @@ def main():
     rtp_a_smooth, rtp_b_smooth = run_rtp_for_table(tables_smooth, "平滑推算表", n_rounds)
     rtp_summary.append(("平滑推算表", rtp_a_smooth, rtp_b_smooth))
 
-    try:
-        tables_backup = load_cashout_tables(DATA_PATH_BACKUP)
-    except Exception as e:
-        print(f"\n讀取平滑推算表.backup CSV 失敗: {e}，跳過 backup 的兩組 RTP")
-    else:
-        rtp_a_backup, rtp_b_backup = run_rtp_for_table(tables_backup, "平滑推算表.backup", n_rounds)
-        rtp_summary.append(("平滑推算表.backup", rtp_a_backup, rtp_b_backup))
+    if CALCULATE_BACKUP_RTP:
+        try:
+            tables_backup = load_cashout_tables(DATA_PATH_BACKUP)
+        except Exception as e:
+            print(f"\n讀取平滑推算表.backup CSV 失敗: {e}，跳過 backup 的兩組 RTP")
+        else:
+            rtp_a_backup, rtp_b_backup = run_rtp_for_table(tables_backup, "平滑推算表.backup", n_rounds)
+            rtp_summary.append(("平滑推算表.backup", rtp_a_backup, rtp_b_backup))
 
     if rtp_summary:
         print("\n=== RTP 總覽 ===")
