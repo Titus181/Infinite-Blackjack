@@ -15,7 +15,7 @@ TARGET_RTP = 96.80
 # 官方規則：兌現賠付 0.4～1.77 倍，主注 100 → 40～177 元
 V_MIN, V_MAX = 40, 177
 
-CALIBRATION_ROUNDS = int(os.environ.get("CALIBRATION_ROUNDS", "5000000"))
+CALIBRATION_ROUNDS = int(os.environ.get("CALIBRATION_ROUNDS", "20000000"))
 MAX_SCALE_ITERATIONS = 20
 RTP_TOLERANCE = 0.01  # 與目標差距小於 0.01% 即停止
 TIE_PREFER_BELOW = 0.005  # 兩候選 abs(err) 差 < 此值時，優先選 rtp <= TARGET_RTP
