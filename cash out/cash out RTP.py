@@ -10,6 +10,7 @@ SIMULATION_ROUNDS = 100000000  # 模擬局數，可依需求調高以增加精�
 # 以腳本所在目錄為基準，確保無論從哪裡執行都能找到 data
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(SCRIPT_DIR, "data", "blackjack 對照表 - 平滑推算表.csv")
+DATA_PATH_BACKUP = os.path.join(SCRIPT_DIR, "data", "blackjack 對照表 - 平滑推算表.backup.csv")
 ORIGINAL_DATA_PATH = os.path.join(SCRIPT_DIR, "data", "blackjack 對照表 - 原始數據整理表.csv")
 
 # 莊家明牌欄位對應 (CSV 欄位名 -> 整數)
@@ -271,20 +272,15 @@ def run_simulation(tables, n_rounds, seed=None, strategy='A'):
     return total_returned, total_bet, rtp_pct
 
 
-# --- 主程式 ---
-def main():
-    print("正在載入兌現對照表...")
-    try:
-        tables = load_cashout_tables(DATA_PATH)
-    except Exception as e:
-        print(f"讀取 CSV 失敗: {e}")
-        return
-
-    n_rounds = SIMULATION_ROUNDS
+def run_rtp_for_table(tables, table_label, n_rounds):
+    """
+    對單一兌現表依序跑策略 A、策略 B，並印出該表名稱下的兩組 RTP 結果。
+    回傳 (rtp_a, rtp_b) 方便彙總顯示。
+    """
     shoe = create_shoe(8)
 
-    # --- 策略 A（對標 EVO 官方 96.80%）---
-    print("\n開始模擬 策略 A（對標 EVO 官方 96.80%）...")
+    # --- 策略 A ---
+    print(f"\n開始模擬 [{table_label}] 策略 A...")
     total_returned_a = 0.0
     for i in range(n_rounds):
         amt, _ = play_round(shoe, tables)
@@ -294,14 +290,14 @@ def main():
             print(f"  已模擬 {i + 1} 局 | 目前估計 RTP: {current_rtp:.2f}%")
     total_bet_a = n_rounds * BASE_BET
     rtp_a = (total_returned_a / total_bet_a) * 100
-    print("\n=== 策略 A 最終結果（對標 EVO 官方 96.80%）===")
+    print(f"\n=== {table_label} - 策略 A 最終結果 ===")
     print(f"總模擬局數: {n_rounds}")
     print(f"總下注金額: {total_bet_a}")
     print(f"總拿回金額: {total_returned_a:.2f}")
     print(f"★ 策略 A RTP: {rtp_a:.2f}%")
 
-    # --- 策略 B（參考）---
-    print("\n開始模擬 策略 B（參考）...")
+    # --- 策略 B ---
+    print(f"\n開始模擬 [{table_label}] 策略 B...")
     shoe = create_shoe(8)
     total_returned_b = 0.0
     total_bet_b = 0.0
@@ -313,11 +309,43 @@ def main():
             current_rtp = (total_returned_b / total_bet_b) * 100
             print(f"  已模擬 {i + 1} 局 | 目前估計 RTP: {current_rtp:.2f}%")
     rtp_b = (total_returned_b / total_bet_b) * 100 if total_bet_b > 0 else 0.0
-    print("\n=== 策略 B 最終結果（參考）===")
+    print(f"\n=== {table_label} - 策略 B 最終結果 ===")
     print(f"總模擬局數: {n_rounds}")
     print(f"總下注金額: {total_bet_b}")
     print(f"總拿回金額: {total_returned_b:.2f}")
     print(f"★ 策略 B RTP: {rtp_b:.2f}%")
+    return rtp_a, rtp_b
+
+
+# --- 主程式 ---
+def main():
+    print("正在載入兌現對照表...")
+    n_rounds = SIMULATION_ROUNDS
+
+    rtp_summary = []
+
+    try:
+        tables_smooth = load_cashout_tables(DATA_PATH)
+    except Exception as e:
+        print(f"讀取平滑推算表 CSV 失敗: {e}")
+        return
+
+    rtp_a_smooth, rtp_b_smooth = run_rtp_for_table(tables_smooth, "平滑推算表", n_rounds)
+    rtp_summary.append(("平滑推算表", rtp_a_smooth, rtp_b_smooth))
+
+    try:
+        tables_backup = load_cashout_tables(DATA_PATH_BACKUP)
+    except Exception as e:
+        print(f"\n讀取平滑推算表.backup CSV 失敗: {e}，跳過 backup 的兩組 RTP")
+    else:
+        rtp_a_backup, rtp_b_backup = run_rtp_for_table(tables_backup, "平滑推算表.backup", n_rounds)
+        rtp_summary.append(("平滑推算表.backup", rtp_a_backup, rtp_b_backup))
+
+    if rtp_summary:
+        print("\n=== RTP 總覽 ===")
+        print("對照表\t\t策略 A RTP\t策略 B RTP")
+        for label, rtp_a, rtp_b in rtp_summary:
+            print(f"{label}\t{rtp_a:.2f}%\t\t{rtp_b:.2f}%")
 
 if __name__ == "__main__":
     main()
